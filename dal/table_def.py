@@ -1,10 +1,34 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Enum
+from sqlalchemy import Column, String, Enum, Integer, TIMESTAMP
 
 
 import enum
 
 Base = declarative_base()
+
+
+class FeedVersion(Base):
+    """
+    Entity representing a TransitFeed version data
+
+    Arguments:
+        Base {[type]} -- [description]
+    """
+
+    id = Column(String(100), primary_key=True)
+    size = Column(Integer)
+    registred_date = Column(TIMESTAMP)
+    start_date = Column(String(10))     # Date inf format YYYYMMDD
+    finish_date = Column(String(10))    # Date inf format YYYYMMDDs
+    download_url = Column(String(250), unique=True)
+
+    def __init__(self, **data):
+        self.id = data['feed_version_id']
+        self.size = data['size']
+        self.registred_date = data['registred_date']
+        self.start_date = data['start_date']
+        self.finish_date = data['finish_date']
+        self.download_url = data['url']
 
 
 class LineType(enum.Enum):
