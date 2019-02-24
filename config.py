@@ -10,7 +10,7 @@ load_dotenv(os.path.join(base_dir, '.env'))
 _DEF_VAL = {
     'LOCAL_DB': 'sqlite:///' + os.path.join(base_dir, 'data', 'app.db'),
     'LOG_DIR': os.path.join(base_dir, 'logs'),
-    "VERSION_DIR": os.path.join(base_dir, 'data', 'versions'),
+    "GTFS_DIR": os.path.join(base_dir, 'data', 'versions'),
     "TRANSITFEED_API_URL": "https://api.transitfeeds.com/",
     "TRANSITFEED_API_VERSION": "v1",
     "STIB_ID": "societe-des-transports-intercommunaux-de-bruxelles/527",
@@ -26,7 +26,7 @@ class Config(object):
     LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT', False)
 
     LOG_DIR = os.environ.get('LOG_DIR', _DEF_VAL['LOG_DIR'])
-    VERSION_DIR = os.environ.get('VERSION_DIR', _DEF_VAL['VERSION_DIR'])
+    GTFS_DIR = os.environ.get('GTFS_DIR', _DEF_VAL['GTFS_DIR'])
 
     TRANSITFEED_API_KEY = os.environ.get('TRANSITFEED_API_KEY')
     TRANSITFEED_API_URL = os.environ.get(

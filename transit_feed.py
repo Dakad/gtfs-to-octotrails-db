@@ -66,7 +66,7 @@ class TransitFeed(object):
             "feed": Config.TRANSITFEED_STIB_ID
         }, stream=True)
         if res.status_code == 200:
-            file_name = os.path.join(Config.VERSION_DIR, "gtfs.zip")
+            file_name = os.path.join(Config.GTFS_DIR, "gtfs.zip")
             total_size = int(res.headers['Content-Length'])
             read = 0
             with open(file_name, "wb") as gtfs:
