@@ -40,13 +40,21 @@ class LineType(enum.Enum):
     Bus = 3
 
 
+"""Association table btwn Lines && Stops
+"""
+line_stops = Table("lines_stops", Base.metadata,
+                   Column('line_number', String, ForeignKey('lines.number')),
+                   Column('stop_feed_id', String, ForeignKey('stops.feed_id'))
+                   )
+
+
 class Line(Base):
     """
     """
 
     __tablename__ = "lines"
 
-    number = Column(String(10), primary_key=True)
+    number = Column('number', String(10), primary_key=True)
     description = Column(String(100))
     departure = Column('from', String(100))
     terminal = Column('to', String(100))
@@ -63,14 +71,6 @@ class Line(Base):
         self.terminal = data['terminal']
         self.route_color = data['route_color']
         self.route_text_color = data['route_text_color']
-
-
-"""Association table btwn Lines && Stops
-"""
-line_stops = Table("lines_stops", Base.metadata,
-                   Column('line_number', String, ForeignKey('lines.number')),
-                   Column('stop_feed_id', String, ForeignKey('stops.feed_id'))
-                   )
 
 
 class Stop(Base):
@@ -122,3 +122,13 @@ class Localisation(Base):
         self.stop_id = data['stop_id']
         self.longitude = data['longitude']
         self.latitude = data['latitude']
+
+
+def init(engine):
+    Base.metadata.create_all(engine)
+
+
+if __name__ == "__main__":
+    from sqlalchemy import create_engine
+    engine = create_engine('sqlite:///data/app.db', echo=True)
+    init(engine)
