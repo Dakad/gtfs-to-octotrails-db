@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Enum, Integer, TIMESTAMP, ForeignKey, Table
+from sqlalchemy import Column, String, Enum, Integer, Float, TIMESTAMP, ForeignKey, Table
 from sqlalchemy.orm import relationship, backref
 
 import enum
@@ -68,8 +68,8 @@ class Line(Base):
 """Association table btwn Lines && Stops
 """
 line_stops = Table("lines_stops", Base.metadata,
-                   Column('line_id', String, ForeignKey('lines.id')),
-                   Column('stop_id', String, ForeignKey('stops.id'))
+                   Column('line_number', String, ForeignKey('lines.number')),
+                   Column('stop_feed_id', String, ForeignKey('stops.feed_id'))
                    )
 
 
@@ -89,9 +89,36 @@ class Stop(Base):
     description_nl = Column(String(100))
 
     lines = relationship("Line", secondary=line_stops, back_populates="stops")
+    localisation = relationship("Localisation", backref="stops", uselist=False)
 
     def __init__(self, **data):
         self.feed_id = data['feed_id']
         self.tech_id = data['tech_id']
         self.description_fr = data['description_fr']
         self.description_nl = data['description_nl']
+
+
+class Localisation(Base):
+    """
+    Entity representing a Localisation of a stop
+
+    Arguments:
+        stop_id {string} -- The stop_id
+        longitude {float} -- The longitude
+        latitude {float} -- The latitude
+        address_fr {string} -- The french address version of the localisation 
+        address_nl {string} -- The deutsch address version of the localisation 
+    """
+
+    __tablename__ = "localisations"
+
+    stop_id = Column(String, ForeignKey(Stop.feed_id), primary_key=True)
+    longitude = Column(Float)
+    latitude = Column(Float)
+    address_fr = Column(String(250))
+    address_nl = Column(String(250))
+
+    def __init__(self, **data):
+        self.stop_id = data['stop_id']
+        self.longitude = data['longitude']
+        self.latitude = data['latitude']
