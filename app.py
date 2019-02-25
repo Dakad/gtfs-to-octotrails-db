@@ -26,11 +26,22 @@ def config_log(log_instance="app"):
     logging.root.info('[Config] Logging : DONE ')
 
 
-
-
 def main(run='all'):
     print("Exec from Main")
-    
+
+
+def remove_gtfs_files():
+    from zipfile import ZipFile
+    light_files = ['stops',  'translations', 'routes']
+
+    def is_ok_for_gtfs_light(i): return i.filename[:-4] in light_files
+
+    with ZipFile('./data/versions/gtfs.zip', 'r') as gtfs:
+        with ZipFile('./data/versions/gtfs-light.zip', 'w') as gtfs_light:
+            only_files = list(filter(is_ok_for_gtfs_light, gtfs.infolist()))
+            for light_file in only_files:
+                buffer = gtfs.read(light_file.filename)
+                gtfs_light.writestr(light_file, buffer)
 
 
 if __name__ == "__main__":
