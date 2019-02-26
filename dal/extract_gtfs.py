@@ -36,7 +36,6 @@ def process_gtfs_files(gtfs_dir, session_maker):
     for t in threads:
         t.join()
 
-    # TODO Add translation to Stop
     file_name = os.path.join(gtfs_dir, "translations.txt")
     tr = GTFSTranslationProcess(
         translation_file=file_name,
@@ -44,7 +43,16 @@ def process_gtfs_files(gtfs_dir, session_maker):
         feed_id=feed_id)
     tr.start()
 
-    tr.join()
+    # TODO Add GtfsTripProcesss
+
+#    # Waitin for GtfsTripProcesss to complete
+    # t.join()
+
+    # TODO Add GtfsStopTripProcesss
+
+    # TODO Add GtfsTripProcesss
+
+    # TODO Add Nominatem Reverse GeoAdress to Localisation
 
 
 class LightGTFSProcess(Thread):

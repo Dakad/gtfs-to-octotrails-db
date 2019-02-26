@@ -57,6 +57,7 @@ line_stops = Table("lines_stops", Base.metadata,
                    Column('line_number', Unicode, ForeignKey('lines.number')),
                    Column('stop_feed_id', Unicode, ForeignKey('stops.stop_id'))
                    )
+# TODO Change line_stops to real Class
 
 
 class Line(Base):
