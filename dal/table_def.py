@@ -1,6 +1,7 @@
+from sqlalchemy import Table, Column, ForeignKey, ForeignKeyConstraint, and_
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Enum, Integer, Float, TIMESTAMP, ForeignKey, Table
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.types import (Unicode, Integer, Float, TIMESTAMP, Enum, String)
+from sqlalchemy.orm import relationship, backref, validates, synonym, foreign
 
 import enum
 
@@ -15,14 +16,24 @@ class FeedVersion(Base):
         Base {[type]} -- [description]
     """
 
-    __tablename__ = "feedversions"
+    __tablename__ = "feed_version"
+    _plural_name_ = 'feed_versions'
 
-    id = Column(String(100), primary_key=True)
+    feed_id = Column(Unicode(100), primary_key=True)
+    id = synonym('feed_id')
     size = Column(Integer)
     registred_date = Column(TIMESTAMP)
     start_date = Column(String(10))     # Date inf format YYYYMMDD
-    finish_date = Column(String(10))    # Date inf format YYYYMMDDs
-    download_url = Column(String(250), unique=True)
+    finish_date = Column(String(10))    # Date inf format YYYYMMDD
+    download_url = Column(Unicode(250), unique=True)
+
+    stops = relationship("Stop", backref=(
+        "feedversions"), cascade="all, delete-orphan")
+    lines = relationship("Line", backref=("feedversions"),
+                         cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return '<FeedVersion %s: %d >' % (self.feed_id, self.registred_date)
 
     def __init__(self, **data):
         self.id = data['feed_version_id']
@@ -43,8 +54,8 @@ class LineType(enum.Enum):
 """Association table btwn Lines && Stops
 """
 line_stops = Table("lines_stops", Base.metadata,
-                   Column('line_number', String, ForeignKey('lines.number')),
-                   Column('stop_feed_id', String, ForeignKey('stops.feed_id'))
+                   Column('line_number', Unicode, ForeignKey('lines.number')),
+                   Column('stop_feed_id', Unicode, ForeignKey('stops.stop_id'))
                    )
 
 
@@ -53,16 +64,22 @@ class Line(Base):
     """
 
     __tablename__ = "lines"
+    _plural_name_ = 'lines'
 
-    number = Column('number', String(10), primary_key=True)
-    description = Column(String(100))
-    departure = Column('from', String(100))
-    terminal = Column('to', String(100))
-    route_color = Column(String(10))
-    route_text_color = Column(String(10))
+    feed_id = Column(Integer, ForeignKey(FeedVersion.id), primary_key=True)
+    number = Column('number', Unicode(10), primary_key=True)
+    id = synonym('number')
+    description = Column(Unicode(100))
+    departure = Column('from', Unicode(100))
+    terminal = Column('to', Unicode(100))
+    route_color = Column(Unicode(10))
+    route_text_color = Column(Unicode(10))
     mode = Column('type', Enum(LineType))
 
     stops = relationship("Stop", secondary=line_stops, back_populates="lines")
+
+    def __repr__(self):
+        return '<Line %s: %s  (%s)>' % (self.number, self.description, self.mode)
 
     def __init__(self, **data):
         self.number = data['number']
@@ -78,18 +95,24 @@ class Stop(Base):
     Entity representing a Stop
 
     Arguments:
-        feed_id {string} -- The feed_id in GTFS
+        feed_id {string} -- The FeedVersion id in GTFS
     """
 
     __tablename__ = "stops"
+    _plural_name_ = 'stops'
 
-    feed_id = Column(String(10), primary_key=True)
-    tech_id = Column(String(10), nullable=True)
-    description_fr = Column(String(100))
-    description_nl = Column(String(100))
+    feed_id = Column(Integer, ForeignKey(FeedVersion.id), primary_key=True)
+    stop_id = Column(Unicode, primary_key=True, index=True)
+    id = synonym('stop_id')
+    description_fr = Column(Unicode(100))
+    description_nl = Column(Unicode(100))
 
     lines = relationship("Line", secondary=line_stops, back_populates="stops")
-    localisation = relationship("Localisation", backref="stops", uselist=False)
+    localisation = relationship(
+        "Localisation", backref="stops", uselist=False, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return '<Stop %s: %s>' % (self.stop_id, self.feed_name)
 
     def __init__(self, **data):
         self.feed_id = data['feed_id']
@@ -111,12 +134,13 @@ class Localisation(Base):
     """
 
     __tablename__ = "localisations"
+    _plural_name_ = 'localisations'
 
-    stop_id = Column(String, ForeignKey(Stop.feed_id), primary_key=True)
+    stop_id = Column(Unicode, ForeignKey(Stop.id), primary_key=True)
     longitude = Column(Float)
     latitude = Column(Float)
-    address_fr = Column(String(250))
-    address_nl = Column(String(250))
+    address_fr = Column(Unicode(250))
+    address_nl = Column(Unicode(250))
 
     def __init__(self, **data):
         self.stop_id = data['stop_id']
