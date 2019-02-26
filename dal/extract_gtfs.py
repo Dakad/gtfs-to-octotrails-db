@@ -21,22 +21,30 @@ def unzip_gtfs(gtfs_light_zip):
 
 
 def process_gtfs_files(gtfs_dir, session_maker):
+    feed_id = os.path.basename(gtfs_dir)
     light_files = ['stops', 'routes']
     threads = []
     for light in light_files:
-        file_name = os.path.join(gtfs_dir, light + '.txt')
-        feed_id = os.path.basename(gtfs_dir)
+        file_name = os.path.join(gtfs_dir, light + ".txt")
 
-        t = LightGTFSProcess(kind=light, light_file=file_name,
+        p = LightGTFSProcess(kind=light, light_file=file_name,
                              db_session=session_maker, feed_id=feed_id)
-        t.start()
-        threads.append(t)
+        p.start()
+        threads.append(p)
 
     # Wait for all LightsGtfsProcess to complete
     for t in threads:
         t.join()
 
     # TODO Add translation to Stop
+    file_name = os.path.join(gtfs_dir, "translations.txt")
+    tr = GTFSTranslationProcess(
+        translation_file=file_name,
+        db_session=session_maker,
+        feed_id=feed_id)
+    tr.start()
+
+    tr.join()
 
 
 class LightGTFSProcess(Thread):
@@ -69,6 +77,36 @@ class LightGTFSProcess(Thread):
                     # print(line)
                     self.db_session.add(Stop(**line))
                     self.db_session.add(Localisation(**line))
+            self.db_session.commit()
+        except Exception as ex:
+            print(ex, line)
+            self.db_session.rollback()
+
+
+class GTFSTranslationProcess(Thread):
+    """
+    Task to process the GTFS translation file
+
+    Arguments:
+        feed_id {string} -- The FeedVersion id
+        translation_file {string} -- The GTFS translation file
+        db_session {sqlalchemy.orm.sessionmaker} -- The SQLAchemy Session
+    """
+
+    def __init__(self, **args):
+        Thread.__init__(self)
+        self.feed_id = args['feed_id']
+        self.translation_file = args['translation_file']
+        self.db_session = args['db_session']()
+
+    def run(self):
+        try:
+            sess = self.db_session.query(Stop)
+            for line in _read_gtfs_csv(self.translation_file):
+                if(line['lang'] == 'fr'):
+                    continue
+                row = sess.filter(Stop.description_fr == line['trans_id'])
+                row.update({"description_nl": line['translation']})
             self.db_session.commit()
         except Exception as ex:
             print(ex, line)

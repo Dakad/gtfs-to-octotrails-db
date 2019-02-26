@@ -119,6 +119,7 @@ class Stop(Base):
         self.feed_id = data['feed_id']
         self.stop_id = data['stop_id']
         self.description_fr = data['stop_name']
+        self.description_nl = data['stop_name']
 
 
 class Localisation(Base):
