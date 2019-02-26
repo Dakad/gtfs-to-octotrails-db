@@ -2,9 +2,16 @@ import pygtfs
 
 
 def main():
-    sched = pygtfs.Schedule('sqlite:///data/gtfs.sqlite')
-    pygtfs.append_feed(sched, "./data/versions/gtfs.zip")
-    print(sched)
+    gtfs_dir = unzip_gtfs("./data/versions/gtfs-light.zip")
+
+
+def unzip_gtfs(gtfs_light_zip: str) -> str:
+    from zipfile import ZipFile
+
+    gtfs_zip = ZipFile(gtfs_light_zip, "r")
+    extract_dir = gtfs_zip.filename[:-4]
+    gtfs_light_zip.extractall(extract_dir)
+    return extract_dir
 
 
 if __name__ == "__main__":
