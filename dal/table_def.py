@@ -79,15 +79,16 @@ class Line(Base):
     stops = relationship("Stop", secondary=line_stops, back_populates="lines")
 
     def __repr__(self):
-        return '<Line %s: %s  (%s)>' % (self.number, self.description, self.mode)
+        return '<Line #%s: %s  (%s)>' % (self.number, self.description, self.mode)
 
     def __init__(self, **data):
-        self.number = data['number']
-        self.description = data['description']
-        self.departure = data['departure']
-        self.terminal = data['terminal']
+        self.feed_id = data['feed_id']
+        self.number = data['route_short_name']
+        self.description = data['route_long_name']
+        self.departure, self.terminal = self.description.split(' - ')
         self.route_color = data['route_color']
         self.route_text_color = data['route_text_color']
+        self.mode = LineType(int(data['route_type']))
 
 
 class Stop(Base):
@@ -116,9 +117,8 @@ class Stop(Base):
 
     def __init__(self, **data):
         self.feed_id = data['feed_id']
-        self.tech_id = data['tech_id']
-        self.description_fr = data['description_fr']
-        self.description_nl = data['description_nl']
+        self.stop_id = data['stop_id']
+        self.description_fr = data['stop_name']
 
 
 class Localisation(Base):
@@ -144,8 +144,8 @@ class Localisation(Base):
 
     def __init__(self, **data):
         self.stop_id = data['stop_id']
-        self.longitude = data['longitude']
-        self.latitude = data['latitude']
+        self.longitude = float(data['stop_lon'])
+        self.latitude = float(data['stop_lat'])
 
 
 def init(engine):
@@ -154,5 +154,5 @@ def init(engine):
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
-    engine = create_engine('sqlite:///data/app.db', echo=True)
+    engine = create_engine('sqlite:///data/app.sqlite', echo=True)
     init(engine)
