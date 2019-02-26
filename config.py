@@ -8,7 +8,7 @@ load_dotenv(os.path.join(base_dir, '.env'))
 
 
 _DEF_VAL = {
-    'LOCAL_DB': 'sqlite:///' + os.path.join(base_dir, 'data', 'app.db'),
+    'LOCAL_DB': 'sqlite:///' + os.path.join(base_dir, 'data', 'app.sqlite'),
     'LOG_DIR': os.path.join(base_dir, 'logs'),
     "GTFS_DIR": os.path.join(base_dir, 'data', 'versions'),
     "TRANSITFEED_API_URL": "https://api.transitfeeds.com/",
