@@ -1,7 +1,9 @@
 import os
 import csv
 from threading import Thread
-from table_def import Line, Stop, Localisation
+
+
+from .table_def import Line, Stop, Localisation
 
 
 def init(gtfs_file_name, SessionMaker):
