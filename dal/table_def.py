@@ -1,6 +1,6 @@
 from sqlalchemy import Table, Column, ForeignKey, ForeignKeyConstraint, and_
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import (Unicode, Integer, Float, TIMESTAMP, Enum, String)
+from sqlalchemy.types import Unicode, Integer, Float, TIMESTAMP, Enum, String, BigInteger
 from sqlalchemy.orm import relationship, backref, validates, synonym, foreign
 
 import enum
@@ -53,11 +53,32 @@ class LineType(enum.Enum):
 
 """Association table btwn Lines && Stops
 """
-line_stops = Table("lines_stops", Base.metadata,
-                   Column('line_number', Unicode, ForeignKey('lines.number')),
-                   Column('stop_feed_id', Unicode, ForeignKey('stops.stop_id'))
-                   )
+# line_stops = Table("lines_stops", Base.metadata,
+#                    Column('line_number', Unicode, ForeignKey('lines.number')),
+#                    Column('stop_feed_id', Unicode, ForeignKey('stops.stop_id'))
+#                    )
 # TODO Change line_stops to real Class
+
+
+class LineStop(Base):
+    """
+    Entity representing the relation between a line and stop
+
+    Arguments:
+        line_number {Unicode} -- The line number
+        stop_id {Unicode}  - The Stop Id
+        trip_id {Unicde} - The trip Id in the feed
+    """
+
+    __tablename__ = "line_stop"
+    _plural_name_ = "line_stops"
+
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    line_number = Column(Unicode, ForeignKey('lines.number'), nullable=True)
+    stop_id = Column(Unicode, ForeignKey('stops.stop_id'), nullable=True)
+    trip_id = Column(BigInteger)
+
+    lines = relationship("Line")
 
 
 class Line(Base):
@@ -77,7 +98,7 @@ class Line(Base):
     route_text_color = Column(Unicode(10))
     mode = Column('type', Enum(LineType))
 
-    stops = relationship("Stop", secondary=line_stops, back_populates="lines")
+    # stops = relationship("Stop", secondary=LineStop, back_populates="lines")
 
     def __repr__(self):
         return '<Line #%s: %s  (%s)>' % (self.number, self.description, self.mode)
@@ -109,7 +130,8 @@ class Stop(Base):
     description_fr = Column(Unicode(100))
     description_nl = Column(Unicode(100))
 
-    lines = relationship("Line", secondary=line_stops, back_populates="stops")
+    lines = relationship("LineStop")
+
     localisation = relationship(
         "Localisation", backref="stops", uselist=False, cascade="all, delete-orphan")
 
