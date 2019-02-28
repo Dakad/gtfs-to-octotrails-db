@@ -27,7 +27,32 @@ def config_log(log_instance="app"):
 
 
 def main(run='all'):
-    print("Exec from Main")
+    import sqlalchemy
+    from transit_feed import TransitFeed
+    from dal import table_def_init, extract_gtfs_init
+
+    try:
+        print("Exec from Main")
+
+        print("1 - Fecthing TransitFeedAPI ...")
+        tf = TransitFeed()
+
+        feed_version = tf.getLastFeedVersion()
+
+        print("2 - Downloading TransitFeed Version : %s ..." %
+              feed_version['id'])
+        gtfs_zip_filename = feed_version['id'] + ".zip"
+        tf.downloadLastVersion(file_name=gtfs_zip_filename)
+
+        print("3 - Creating app tables ...")
+        db_engine = sqlalchemy.create_engine(Config.DB_URI, echo=False)
+        table_def_init(db_engine)
+
+        print("4 - Extracting GTFS data into Octotrails DB ...")
+        SessionMaker = sqlalchemy.orm.sessionmaker(bind=db_engine)
+        extract_gtfs_init(gtfs_zip_filename, SessionMaker)
+    except Exception as ex:
+        logging.critical(ex)
 
 
 def remove_gtfs_files():
@@ -45,13 +70,14 @@ def remove_gtfs_files():
 
 
 if __name__ == "__main__":
-    import argparse
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument(
-        "-r", "--run",
-        choices=['pipeline', 'web', 'all'],
-        const='all', default='all', nargs='?',
-        help="Which part of the app to run : pipeline, web, all (by default: %(default)s)")
+    # import argparse
+    # arg_parser = argparse.ArgumentParser()
+    # arg_parser.add_argument(
+    #     "-r", "--run",
+    #     choices=['pipeline', 'web', 'all'],
+    #     const='all', default='all', nargs='?',
+    #     help="Which part of the app to run : pipeline, web, all (by default: %(default)s)")
 
-    args = vars(arg_parser.parse_args())
-    main(**args)
+    # args = vars(arg_parser.parse_args())
+    # main(**args)
+    main()
