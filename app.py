@@ -32,32 +32,33 @@ def main(run='all'):
     from dal import table_def_init, extract_gtfs_init
 
     try:
-        print("Exec from Main")
+        logging.info("Exec from Main")
 
-        print("1 - Fecthing TransitFeedAPI ...")
+        logging.info("1 - Fecthing TransitFeedAPI ...")
         tf = TransitFeed()
 
         feed_version = tf.getLastFeedVersion()
 
-        print("2 - Downloading TransitFeed Version : %s ..." %
-              feed_version['id'])
+        logging.info("2 - Downloading TransitFeed Version : %s ..." %
+                     feed_version['id'])
         gtfs_zip_filename = feed_version['id'] + ".zip"
-        tf.downloadLastVersion(file_name=gtfs_zip_filename)
+        # tf.downloadLastVersion(file_name=gtfs_zip_filename)
 
-        print("3 - Creating app tables ...")
+        logging.info("3 - Creating app tables ...")
         db_engine = sqlalchemy.create_engine(Config.DB_URI, echo=False)
         table_def_init(db_engine)
 
-        print("4 - Extracting GTFS data into Octotrails DB ...")
+        logging.info("4 - Extracting GTFS data into Octotrails DB ...")
         SessionMaker = sqlalchemy.orm.sessionmaker(bind=db_engine)
-        extract_gtfs_init(gtfs_zip_filename, SessionMaker)
+        gtfs_zip_path = os.path.join(Config.GTFS_DIR, gtfs_zip_filename)
+        extract_gtfs_init(gtfs_zip_path, SessionMaker)
     except Exception as ex:
         logging.critical(ex)
 
 
 def remove_gtfs_files():
     from zipfile import ZipFile
-    light_files = ['stops',  'translations', 'routes']
+    light_files = ['stops',  'translations', 'routes', 'trips', 'stop_times']
 
     def is_ok_for_gtfs_light(i): return i.filename[:-4] in light_files
 
