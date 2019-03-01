@@ -1,19 +1,21 @@
 import os
 import csv
 from threading import Thread
+import logging
+
+from dal.table_def import Line, Stop, Localisation, LineStop
 
 
-from .table_def import Line, Stop, Localisation
+def init(gtfs_file_path, SessionMaker):
+    logging.info('Unziping the GTFS feed ... ')
+    feed_version_id = unzip_gtfs(gtfs_file_path)
 
-
-def init(gtfs_file_name, SessionMaker):
-    feed_version_id = unzip_gtfs(gtfs_file_name)
+    logging.info('Extracting the GTFS data in DB ... ')
     process_gtfs_files(feed_version_id, SessionMaker)
 
 
 def unzip_gtfs(gtfs_light_zip):
     from zipfile import ZipFile
-    import pygtfs
 
     gtfs_zip = ZipFile(gtfs_light_zip, "r")
 
@@ -27,9 +29,10 @@ def process_gtfs_files(gtfs_dir, session_maker):
     light_files = ['stops', 'routes']
     threads = []
     for light in light_files:
-        file_name = os.path.join(gtfs_dir, light + ".txt")
+        gtfs_file_name = os.path.join(gtfs_dir, light + ".txt")
 
-        p = LightGTFSProcess(kind=light, light_file=file_name,
+        logging.info('Processing %s ' % gtfs_file_name)
+        p = LightGTFSProcess(kind=light, light_file=gtfs_file_name,
                              db_session=session_maker, feed_id=feed_id)
         p.start()
         threads.append(p)
@@ -38,17 +41,24 @@ def process_gtfs_files(gtfs_dir, session_maker):
     for t in threads:
         t.join()
 
-    file_name = os.path.join(gtfs_dir, "translations.txt")
+    # Process the GTFS translations.txt to get the nl version
+    gtfs_file_name = os.path.join(gtfs_dir, "translations.txt")
+    logging.info('Processing %s ' % gtfs_file_name)
     tr = GTFSTranslationProcess(
-        translation_file=file_name,
+        translation_file=gtfs_file_name,
         db_session=session_maker,
         feed_id=feed_id)
     tr.start()
 
-    # TODO Add GtfsTripProcesss
+    # Process the GTFS trip.txt
+    gtfs_file_name = os.path.join(gtfs_dir, "trips.txt")
+    logging.info('Processing %s ' % gtfs_file_name)
+    tr = GTFSTripProcess(gtfs_trip_file=gtfs_file_name,
+                         db_session=session_maker)
+    tr.start()
 
 #    # Waitin for GtfsTripProcesss to complete
-    # t.join()
+    tr.join()
 
     # TODO Add GtfsStopTripProcesss
 
@@ -120,6 +130,35 @@ class GTFSTranslationProcess(Thread):
             self.db_session.commit()
         except Exception as ex:
             print(ex, line)
+            self.db_session.rollback()
+
+
+class GTFSTripProcess(Thread):
+    """
+    Task to process the  GTFS file : trip.txt as new Line_Stop Entity
+
+    Arguments:
+        trip_file {string} -- The GTFS filename
+        db_session {sqlalchemy.orm.sessionmaker} -- The SQLAchemy Session
+    """
+
+    def __init__(self, **args):
+        Thread.__init__(self)
+        self.trip_file = args['gtfs_trip_file']
+        self.db_session = args['db_session']()
+
+    def run(self):
+        try:
+            for (i, line) in enumerate(_read_gtfs_csv(self.trip_file)):
+                print('%d' % i)
+                new_line_stop = LineStop(
+                    trip_id=line['trip_id'],
+                    stop_id=line['route_id']
+                )
+                self.db_session.add(new_line_stop)
+            self.db_session.commit()
+        except Exception as ex:
+            print(ex)
             self.db_session.rollback()
 
 
