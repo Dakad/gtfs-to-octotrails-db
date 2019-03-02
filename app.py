@@ -11,7 +11,6 @@ def config_log(log_instance="app"):
         logging.root.addHandler(stream_handler)
     else:
         os.makedirs(Config.LOG_DIR, exist_ok=True)
-        print('%s.log' % log_instance)
         my_file_handler = RotatingFileHandler(
             filename=os.path.join(Config.LOG_DIR, '%s.log' % log_instance),
             maxBytes=1024*10,
@@ -23,7 +22,7 @@ def config_log(log_instance="app"):
         logging.root.addHandler(my_file_handler)
 
     logging.root.setLevel(logging.INFO)
-    logging.root.info('[Config] Logging : DONE ')
+    logging.info('[Config] Logging : DONE ')
 
 
 def main(run='all'):
@@ -34,18 +33,22 @@ def main(run='all'):
     try:
         logging.info("Exec from Main")
 
+        config_log()
+
         logging.info("1 - Fecthing TransitFeedAPI ...")
-        tf = TransitFeed()
+        # tf = TransitFeed()
 
-        feed_version = tf.getLastFeedVersion()
+        # feed_version = tf.getLastFeedVersion()
 
-        logging.info("2 - Downloading TransitFeed Version : %s ..." %
-                     feed_version['id'])
-        gtfs_zip_filename = feed_version['id'] + ".zip"
+        # logging.info("2 - Downloading TransitFeed Version : %s ..." %
+        #  feed_version['id'])
+        # gtfs_zip_filename = feed_version['id'] + ".zip"
+        gtfs_zip_filename = "527_20190223.zip"
         # tf.downloadLastVersion(file_name=gtfs_zip_filename)
 
         logging.info("3 - Creating app tables ...")
-        db_engine = sqlalchemy.create_engine(Config.DB_URI, echo=False)
+        db_engine = sqlalchemy.create_engine(
+            Config.DB_URI, echo=False, pool_pre_ping=True, pool_recycle=3600)
         table_def_init(db_engine)
 
         logging.info("4 - Extracting GTFS data into Octotrails DB ...")
