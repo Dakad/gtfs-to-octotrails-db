@@ -23,7 +23,7 @@ class Config(object):
 
     DEBUG = os.environ.get('DEBUG', True)
 
-    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT', False)
+    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT') is not None
 
     LOG_DIR = os.environ.get('LOG_DIR', _DEF_VAL['LOG_DIR'])
     GTFS_DIR = os.environ.get('GTFS_DIR', _DEF_VAL['GTFS_DIR'])
