@@ -1,0 +1,15 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[dev-packages]
+gtfs-to-octotrails-db = {editable = true,path = "."}
+
+[packages]
+requests = ">=2.20.0"
+SQLAlchemy = "==1.2.18"
+python-dotenv = "*"
+
+[requires]
+python_version = "3.7"
