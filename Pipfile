@@ -1,0 +1,13 @@
+[[source]]
+name = "gtfs-to-octotrails-db"
+url = "https://github.com/Dakad/gtfs-to-octotrails-db"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+requests = ">=2.20.0"
+SQLAlchemy = "==1.2.18"
+
+[requires]
+python_version = "3.7"
