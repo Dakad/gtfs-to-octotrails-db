@@ -26,35 +26,41 @@ def config_log(log_instance="app"):
 
 
 def main(run='all'):
-    import sqlalchemy
     from transit_feed import TransitFeed
-    from dal import table_def_init, extract_gtfs_init
+    from dal import table_def_init, save_new_feed_version, extract_gtfs_init
 
     try:
         logging.info("Exec from Main")
 
         config_log()
 
-        logging.info("1 - Fecthing TransitFeedAPI ...")
-        # tf = TransitFeed()
+        logging.info("Creating app tables ...")
+        DBSessionMaker = table_def_init(Config.DB_URI)
+        session = DBSessionMaker()
 
-        # feed_version = tf.getLastFeedVersion()
+        logging.info("Fecthing TransitFeedAPI ...")
+        tf = TransitFeed()
 
-        # logging.info("2 - Downloading TransitFeed Version : %s ..." %
-        #  feed_version['id'])
+        feed_version = tf.getLastFeedVersion()
+        is_new = save_new_feed_version(feed_version, session)
+
+        if is_new is False:
+            raise Exception("Feed #%s from %s is the newest" %
+                            (feed_version['id'], feed_version['start_date']))
+        else:
+            session.commit()
+
+        logging.info("Downloading TransitFeed Version : %s ..." %
+                     feed_version['id'])
         # gtfs_zip_filename = feed_version['id'] + ".zip"
         gtfs_zip_filename = "527_20190223.zip"
-        # tf.downloadLastVersion(file_name=gtfs_zip_filename)
 
-        logging.info("3 - Creating app tables ...")
-        db_engine = sqlalchemy.create_engine(
-            Config.DB_URI, echo=False, pool_pre_ping=True, pool_recycle=3600)
-        table_def_init(db_engine)
+        tf.downloadLastVersion(file_name=gtfs_zip_filename)
 
-        logging.info("4 - Extracting GTFS data into Octotrails DB ...")
-        SessionMaker = sqlalchemy.orm.sessionmaker(bind=db_engine)
+        logging.info("Extracting GTFS data into Octotrails DB ...")
+
         gtfs_zip_path = os.path.join(Config.GTFS_DIR, gtfs_zip_filename)
-        extract_gtfs_init(gtfs_zip_path, SessionMaker)
+        extract_gtfs_init(gtfs_zip_path, DBSessionMaker)
     except Exception as ex:
         logging.critical(ex)
 

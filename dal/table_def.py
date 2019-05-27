@@ -1,7 +1,8 @@
-from sqlalchemy import Table, Column, ForeignKey, ForeignKeyConstraint, and_
+from sqlalchemy import Table, Column, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import Unicode, Integer, Float, TIMESTAMP, Enum, String, BigInteger
 from sqlalchemy.orm import relationship, backref, validates, synonym, foreign
+import sqlalchemy
 
 import enum
 
@@ -36,7 +37,7 @@ class FeedVersion(Base):
         return '<FeedVersion %s: %d >' % (self.feed_id, self.registred_date)
 
     def __init__(self, **data):
-        self.id = data['feed_version_id']
+        self.feed_id = data['id']
         self.size = data['size']
         self.registred_date = data['registred_date']
         self.start_date = data['start_date']
@@ -106,7 +107,7 @@ class Stop(Base):
 
     feed_id = Column(Unicode(100), ForeignKey(
         FeedVersion.id), primary_key=True)
-    stop_id = Column(Unicode(10), primary_key=True)
+    stop_id = Column(Unicode(10), primary_key=True, nullable=False)
     id = synonym('stop_id')
     description_fr = Column(Unicode(100))
     description_nl = Column(Unicode(100))
@@ -170,12 +171,15 @@ class Localisation(Base):
     _plural_name_ = 'localisations'
 
     feed_id = Column(Unicode(100), ForeignKey(
-        FeedVersion.id), primary_key=True)
-    stop_id = Column(Unicode(10), ForeignKey(Stop.stop_id), primary_key=True)
+        FeedVersion.id), primary_key=True, nullable=False)
+    stop_id = Column(Unicode(10), ForeignKey(
+        Stop.stop_id), primary_key=True, nullable=False)
     longitude = Column(Float)
     latitude = Column(Float)
     address_fr = Column(Unicode(250))
     address_nl = Column(Unicode(250))
+
+    PrimaryKeyConstraint('feed_id', 'stop_id', name='localisation_pk')
 
     def __init__(self, **data):
         self.stop_id = data['stop_id']
@@ -184,10 +188,11 @@ class Localisation(Base):
 
 
 def init(engine):
+    db_engine = sqlalchemy.create_engine(Config.DB_URI, echo=False)
+    SessionMaker = sqlalchemy.orm.sessionmaker(bind=db_engine)
     Base.metadata.create_all(engine)
+    return SessionMaker
 
 
 if __name__ == "__main__":
-    from sqlalchemy import create_engine
-    engine = create_engine('sqlite:///data/app.sqlite', echo=True)
-    init(engine)
+    init('sqlite:///data/app.sqlite')
