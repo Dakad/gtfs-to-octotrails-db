@@ -5,11 +5,11 @@ from .extract_gtfs import init as extract_gtfs_init
 def save_new_feed_version(feed_version, db_session):
     from .table_def import FeedVersion
 
-    version = dbion_session.filter(
-        FeedVersion.feed_id == feed_version['id']).first()
+    version = db_session.get(feed_version['id'])
 
     if version is None:
-        db_session.add(FeedVersion(feed_version))
+        db_session.add(FeedVersion(id=feed_version))
+        db_session.commit()
         return True
-
-    return False
+    else:
+        return False
