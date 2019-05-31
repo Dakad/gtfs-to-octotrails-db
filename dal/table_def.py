@@ -37,12 +37,12 @@ class FeedVersion(Base):
         return '<FeedVersion %s: %d >' % (self.feed_id, self.registred_date)
 
     def __init__(self, **data):
-        self.feed_id = data['id']
-        self.size = data['size']
-        self.registred_date = data['registred_date']
-        self.start_date = data['start_date']
-        self.finish_date = data['finish_date']
-        self.download_url = data['url']
+        self.feed_id = data.get('id')
+        self.size = data.get('size')
+        self.registred_date = data.get('registred_date')
+        self.start_date = data.get('start_date')
+        self.finish_date = data.get('finish_date')
+        self.download_url = data.get('url')
 
 
 class LineType(enum.Enum):
@@ -187,10 +187,11 @@ class Localisation(Base):
         self.latitude = float(data['stop_lat'])
 
 
-def init(engine):
-    db_engine = sqlalchemy.create_engine(Config.DB_URI, echo=False)
+def init(db_uri):
+    print(db_uri)
+    db_engine = sqlalchemy.create_engine(db_uri, echo=False)
+    Base.metadata.create_all(db_engine)
     SessionMaker = sqlalchemy.orm.sessionmaker(bind=db_engine)
-    Base.metadata.create_all(engine)
     return SessionMaker
 
 

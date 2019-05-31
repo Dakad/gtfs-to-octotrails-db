@@ -7,8 +7,8 @@ import requests as req
 from config import Config
 
 BASE_URL = Config.TRANSITFEED_API_URL + Config.TRANSITFEED_API_VERSION
-GET_feed_versions = "/getFeedVersions"
-GET_lastest_version = "/getLatestFeedVersion"
+GET_feed_versions_URL = "/getFeedVersions"
+GET_lastest_version_URL = "/getLatestFeedVersion"
 
 
 class TransitFeed(object):
@@ -31,7 +31,7 @@ class TransitFeed(object):
         """
 
         feed_version = None
-        res = req.get(BASE_URL + GET_feed_versions, params={
+        res = req.get(BASE_URL + GET_feed_versions_URL, params={
             "key": Config.TRANSITFEED_API_KEY,
             "feed": Config.TRANSITFEED_STIB_ID,
             "page": 1,
@@ -62,7 +62,7 @@ class TransitFeed(object):
 
         """
 
-        res = req.get(BASE_URL + GET_lastest_version, params={
+        res = req.get(BASE_URL + GET_lastest_version_URL, params={
             "key": Config.TRANSITFEED_API_KEY,
             "feed": Config.TRANSITFEED_STIB_ID
         }, stream=True)
