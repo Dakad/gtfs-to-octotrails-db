@@ -1,3 +1,4 @@
+import sys
 import os
 import logging
 from logging.handlers import RotatingFileHandler
@@ -11,7 +12,6 @@ def config_log(log_instance="app"):
         logging.root.addHandler(stream_handler)
     else:
         os.makedirs(Config.LOG_DIR, exist_ok=True)
-        print('%s.log' % log_instance)
         my_file_handler = RotatingFileHandler(
             filename=os.path.join(Config.LOG_DIR, '%s.log' % log_instance),
             maxBytes=1024*10,
@@ -23,16 +23,78 @@ def config_log(log_instance="app"):
         logging.root.addHandler(my_file_handler)
 
     logging.root.setLevel(logging.INFO)
-    logging.root.info('[Config] Logging : DONE ')
+    logging.info('[Config] Logging : DONE ')
 
 
-def main(run='all'):
-    print("Exec from Main")
+def main(argv):
+    from transit_feed import TransitFeed
+    from dal import table_def_init, save_new_feed_version, extract_gtfs_init
+
+    # process command line
+    # args = process_command_line(argv)
+
+    try:
+        logging.info("Exec from Main")
+
+        config_log()
+
+        logging.info("Creating app tables on %s ..." % Config.DB_URI)
+        DBSessionMaker = table_def_init(Config.DB_URI)
+        session = DBSessionMaker()
+
+        logging.info("Fecthing TransitFeedAPI ...")
+        tf = TransitFeed()
+
+        feed_version = tf.getLastFeedVersion()
+        is_new = save_new_feed_version(feed_version, session)
+
+        if is_new is False:
+            raise Exception("Feed #%s from %s is the newest" %
+                            (feed_version['id'], feed_version['start_date']))
+
+        logging.info("Downloading TransitFeed Version : %s ..." %
+                     feed_version['id'])
+        # gtfs_zip_filename = feed_version['id'] + ".zip"
+        gtfs_zip_filename = "527_20190223.zip"
+
+        tf.downloadLastVersion(file_name=gtfs_zip_filename)
+
+        logging.info("Extracting GTFS data into Octotrails DB ...")
+
+        gtfs_zip_path = os.path.join(Config.GTFS_DIR, gtfs_zip_filename)
+        extract_gtfs_init(gtfs_zip_path, DBSessionMaker)
+    except Exception as ex:
+        logging.critical(ex)
+
+
+def process_command_line(argv):
+    import argparse
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument(
+        "-r", "--run",
+        choices=['pipeline', 'web', 'all'],
+        const='all', default='all', nargs='?',
+        help="Which part of the app to run : pipeline, web, all (by default: %(default)s)")
+
+    # parse options
+    options, args = arg_parser.parse_args()
+
+    # check that files are specified
+    # if len(args) != 2:
+    #     arg_parser.print_help()
+    #     arg_parser.error("you must supply a source and destination")
+
+    # make surce source & destination are not the same
+    # if args[0] == args[1]:
+    #     arg_parser.error("source and destination cannot be the same")
+
+    # we're ok
+    return args
 
 
 def remove_gtfs_files():
     from zipfile import ZipFile
-    light_files = ['stops',  'translations', 'routes']
+    light_files = ['stops',  'translations', 'routes', 'trips', 'stop_times']
 
     def is_ok_for_gtfs_light(i): return i.filename[:-4] in light_files
 
@@ -45,13 +107,5 @@ def remove_gtfs_files():
 
 
 if __name__ == "__main__":
-    import argparse
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument(
-        "-r", "--run",
-        choices=['pipeline', 'web', 'all'],
-        const='all', default='all', nargs='?',
-        help="Which part of the app to run : pipeline, web, all (by default: %(default)s)")
 
-    args = vars(arg_parser.parse_args())
-    main(**args)
+    main(sys.argv)

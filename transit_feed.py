@@ -7,8 +7,8 @@ import requests as req
 from config import Config
 
 BASE_URL = Config.TRANSITFEED_API_URL + Config.TRANSITFEED_API_VERSION
-GET_feed_versions = "/getFeedVersions"
-GET_lastest_version = "/getLatestFeedVersion"
+GET_feed_versions_URL = "/getFeedVersions"
+GET_lastest_version_URL = "/getLatestFeedVersion"
 
 
 class TransitFeed(object):
@@ -31,7 +31,7 @@ class TransitFeed(object):
         """
 
         feed_version = None
-        res = req.get(BASE_URL + GET_feed_versions, params={
+        res = req.get(BASE_URL + GET_feed_versions_URL, params={
             "key": Config.TRANSITFEED_API_KEY,
             "feed": Config.TRANSITFEED_STIB_ID,
             "page": 1,
@@ -44,8 +44,9 @@ class TransitFeed(object):
         data = res.json()
         if data['status'] == 'OK':
             last_version = data['results']['versions'][0]
+            id = last_version['id'][51:].replace('/', '_')
             feed_version = {
-                "id": last_version['id'],
+                "id": id,
                 "size": last_version['size'],
                 "registred_date": last_version['ts'],
                 "url": last_version['url'],
@@ -54,19 +55,19 @@ class TransitFeed(object):
             }
         return feed_version
 
-    def downloadLastVersion(self):
+    def downloadLastVersion(self, file_name="gtfs.zip"):
         """Download/save the last Version of the STIB Feed
 
         Returns:
 
         """
 
-        res = req.get(BASE_URL + GET_lastest_version, params={
+        res = req.get(BASE_URL + GET_lastest_version_URL, params={
             "key": Config.TRANSITFEED_API_KEY,
             "feed": Config.TRANSITFEED_STIB_ID
         }, stream=True)
         if res.status_code == 200:
-            file_name = os.path.join(Config.GTFS_DIR, "gtfs.zip")
+            file_name = os.path.join(Config.GTFS_DIR, file_name)
             total_size = int(res.headers['Content-Length'])
             read = 0
             with open(file_name, "wb") as gtfs:
@@ -79,5 +80,8 @@ class TransitFeed(object):
 
 if __name__ == "__main__":
     t1 = TransitFeed()
-    t1.downloadLastVersion()
+    feed_version = t1.getLastFeedVersion()
+    print(feed_version)
+    gtfs_zip_filename = feed_version['id'] + ".zip"
+    t1.downloadLastVersion(file_name=gtfs_zip_filename)
     # print(l_v.headers)
