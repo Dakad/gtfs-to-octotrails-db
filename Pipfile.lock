@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "98ed0b63ccb61248751572ece4f2d04e8d17d5d2b61fcc49d0749932d289618f"
+            "sha256": "58726738964bb0f439707963576fd9f6516d62aca89ff1e85ebfacba6f5f7238"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -55,10 +55,10 @@
         },
         "sqlalchemy": {
             "hashes": [
-                "sha256:8027fa183f5be466030617a497b2d64e0e16c8d615e5a34bdf9fab6f66bf4723"
+                "sha256:c7fef198b43ef31dfd783d094fd5ee435ce8717592e6784c45ba337254998017"
             ],
             "index": "pypi",
-            "version": "==1.2.18"
+            "version": "==1.3.4"
         },
         "urllib3": {
             "hashes": [
@@ -68,5 +68,10 @@
             "version": "==1.25.3"
         }
     },
-    "develop": {}
+    "develop": {
+        "gtfs-to-octotrails-db": {
+            "editable": true,
+            "path": "."
+        }
+    }
 }
